@@ -19,7 +19,7 @@ export async function getAckPage(
 
     const recipient = await Recipient.findById(
       recipientId,
-      "name email department status"
+      "name email department status acknowledgedAt"
     );
 
     if (!recipient) {
@@ -30,7 +30,7 @@ export async function getAckPage(
       return res.status(200).json({
         alreadyAcknowledged: true,
         name: recipient.name,
-         acknowledgedAt:   recipient.acknowledgedAt,
+        acknowledgedAt:   recipient.acknowledgedAt,
       });
     }
 
