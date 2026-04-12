@@ -24,6 +24,7 @@ export interface PdfOptions {
   companyName?: string;
 }
 
+
 export async function generateUndertakingPDF(opts: PdfOptions): Promise<Buffer> {
   const {
     employeeName,
@@ -31,12 +32,17 @@ export async function generateUndertakingPDF(opts: PdfOptions): Promise<Buffer> 
     companyName  = "Woodrock Softonic Pvt Ltd",
   } = opts;
 
-  const doc      = await PDFDocument.create();
-  const page     = doc.addPage([W, H]);
-  const bold     = await doc.embedFont(StandardFonts.HelveticaBold);
-  const regular  = await doc.embedFont(StandardFonts.Helvetica);
-  const logoImg  = await doc.embedJpg(Buffer.from(LOGO_B64,  "base64"));
-  const stampImg = await doc.embedJpg(Buffer.from(STAMP_B64, "base64"));
+  const doc     = await PDFDocument.create();
+  const page    = doc.addPage([W, H]);
+  const bold    = await doc.embedFont(StandardFonts.HelveticaBold);
+  const regular = await doc.embedFont(StandardFonts.Helvetica);
+
+  // Auto-detect JPEG vs PNG by checking magic bytes
+  const logoBuffer  = Buffer.from(LOGO_B64,  "base64");
+  const stampBuffer = Buffer.from(STAMP_B64, "base64");
+
+  const logoImg  = isJpeg(logoBuffer)  ? await doc.embedJpg(logoBuffer)  : await doc.embedPng(logoBuffer);
+  const stampImg = isJpeg(stampBuffer) ? await doc.embedJpg(stampBuffer) : await doc.embedPng(stampBuffer);
 
   drawHeader(page, bold, regular, logoImg, companyName);
   drawFooter(page, regular);
@@ -44,6 +50,11 @@ export async function generateUndertakingPDF(opts: PdfOptions): Promise<Buffer> 
   drawSignatureSection(page, bold, regular, stampImg, employeeName, designation, finalY);
 
   return Buffer.from(await doc.save());
+}
+
+// Check if buffer is a JPEG by reading magic bytes
+function isJpeg(buffer: Buffer): boolean {
+  return buffer[0] === 0xff && buffer[1] === 0xd8;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
