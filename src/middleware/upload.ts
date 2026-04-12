@@ -1,26 +1,34 @@
 import multer from "multer";
+import path from "path";
 
-// For Excel files — used on /api/upload
 export const excelUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
-    const ok = [
+    const allowedMimes = [
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "application/vnd.ms-excel",
+      "application/wps-office.xlsx",
+      "application/octet-stream",  // some browsers send xlsx as this
       "text/csv",
-    ].includes(file.mimetype);
+    ];
+    const allowedExts = [".xlsx", ".xls", ".csv"];
+    const ext = path.extname(file.originalname).toLowerCase();
 
+    const ok = allowedMimes.includes(file.mimetype) || allowedExts.includes(ext);
     ok ? cb(null, true) : cb(new Error("Only .xlsx, .xls or .csv files allowed"));
   },
 }).single("file");
 
-// For signature images — used on /api/ack/:token
 export const signatureUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
-    const ok = ["image/jpeg", "image/jpg", "image/png", "image/webp"].includes(file.mimetype);
+    const allowedMimes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    const allowedExts  = [".jpg", ".jpeg", ".png", ".webp"];
+    const ext = path.extname(file.originalname).toLowerCase();
+
+    const ok = allowedMimes.includes(file.mimetype) || allowedExts.includes(ext);
     ok ? cb(null, true) : cb(new Error("Only JPG, PNG or WebP allowed"));
   },
 }).single("signature");

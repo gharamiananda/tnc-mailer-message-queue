@@ -12,7 +12,6 @@ export async function parseFile(
   buffer: Buffer,
   _mimetype: string
 ): Promise<ParsedRow[]> {
-  // Works for both .xlsx and .csv — same as your offer letter controller
   const workbook = XLSX.read(buffer, {
     type:      "buffer",
     cellDates: true,
@@ -31,14 +30,14 @@ export async function parseFile(
   const rows: ParsedRow[] = [];
 
   for (const row of raw) {
-    // Normalize keys to lowercase for case-insensitive column matching
-    const normalized: Record<string, string> = {};
+    // Normalize keys to lowercase — handles any column name casing
+    const n: Record<string, string> = {};
     for (const key of Object.keys(row)) {
-      normalized[key.toLowerCase().trim()] = row[key]?.toString().trim() ?? "";
+      n[key.toLowerCase().trim()] = row[key]?.toString().trim() ?? "";
     }
 
-    const name  = normalized["name"]  ?? "";
-    const email = (normalized["email"] ?? "").toLowerCase();
+    const name  = n["name"]  ?? "";
+    const email = (n["email"] ?? "").toLowerCase().trim();
 
     // Skip rows with missing or invalid email
     if (!name || !email || !email.includes("@")) continue;
@@ -46,9 +45,9 @@ export async function parseFile(
     rows.push({
       name,
       email,
-      department:  normalized["department"]  || "",
-      employeeId:  normalized["employeeid"]  || normalized["employee_id"] || "",
-      designation: normalized["designation"] || "CCE",
+      department:  n["department"]  || "",
+      employeeId:  n["employeeid"]  || n["employee_id"] || "",
+      designation: n["designation"] || "CCE",
     });
   }
 
