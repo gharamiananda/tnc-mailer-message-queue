@@ -1,5 +1,4 @@
-import ExcelJS from "exceljs";
-import { Readable } from "stream";
+import * as XLSX from "xlsx";
 
 export interface ParsedRow {
   name:        string;
@@ -11,58 +10,48 @@ export interface ParsedRow {
 
 export async function parseFile(
   buffer: Buffer,
-  mimetype: string
+  _mimetype: string
 ): Promise<ParsedRow[]> {
-  const workbook = new ExcelJS.Workbook();
-  const stream = Readable.from(buffer);
-
-  if (mimetype === "text/csv") {
-    await workbook.csv.read(stream);
-  } else {
-    // Use read() with a stream — avoids the Buffer type mismatch from xlsx.load()
-    await workbook.xlsx.read(stream);
-  }
-
-  const sheet = workbook.worksheets[0];
-  if (!sheet) throw new Error("File has no sheets");
-
-  // Map header names → column numbers (case-insensitive)
-  const colMap: Record<string, number> = {};
-  sheet.getRow(1).eachCell((cell, col) => {
-    const key = cell.value?.toString().toLowerCase().trim() ?? "";
-    colMap[key] = col;
+  // Works for both .xlsx and .csv — same as your offer letter controller
+  const workbook = XLSX.read(buffer, {
+    type:      "buffer",
+    cellDates: true,
   });
 
-  if (!colMap["name"] || !colMap["email"]) {
-    throw new Error('File must have "name" and "email" columns in the first row');
-  }
+  const sheetName = workbook.SheetNames[0];
+  if (!sheetName) throw new Error("File has no sheets");
+
+  const raw = XLSX.utils.sheet_to_json(
+    workbook.Sheets[sheetName],
+    { defval: "", raw: false }
+  ) as Record<string, string>[];
+
+  if (raw.length === 0) throw new Error("No rows found in file");
 
   const rows: ParsedRow[] = [];
 
-  sheet.eachRow((row, rowNum) => {
-    if (rowNum === 1) return; // skip header
+  for (const row of raw) {
+    // Normalize keys to lowercase for case-insensitive column matching
+    const normalized: Record<string, string> = {};
+    for (const key of Object.keys(row)) {
+      normalized[key.toLowerCase().trim()] = row[key]?.toString().trim() ?? "";
+    }
 
-    const name  = row.getCell(colMap["name"]).value?.toString().trim() ?? "";
-    const email = row.getCell(colMap["email"]).value?.toString().trim().toLowerCase() ?? "";
+    const name  = normalized["name"]  ?? "";
+    const email = (normalized["email"] ?? "").toLowerCase();
 
-    if (!name || !email || !email.includes("@")) return;
+    // Skip rows with missing or invalid email
+    if (!name || !email || !email.includes("@")) continue;
 
-    const department = colMap["department"]
-      ? row.getCell(colMap["department"]).value?.toString().trim() ?? ""
-      : "";
+    rows.push({
+      name,
+      email,
+      department:  normalized["department"]  || "",
+      employeeId:  normalized["employeeid"]  || normalized["employee_id"] || "",
+      designation: normalized["designation"] || "CCE",
+    });
+  }
 
-    const employeeId = colMap["employeeid"] ?? colMap["employee_id"]
-      ? row.getCell(colMap["employeeid"] ?? colMap["employee_id"]).value?.toString().trim() ?? ""
-      : "";
-
-    const designation = colMap["designation"]
-      ? row.getCell(colMap["designation"]).value?.toString().trim() ?? "CCE"
-      : "CCE";
-
-    rows.push({ name, email, department, employeeId, designation });
-  });
-
-  if (rows.length === 0) throw new Error("No valid rows found in the file");
-
+  if (rows.length === 0) throw new Error("No valid rows found in file");
   return rows;
 }
