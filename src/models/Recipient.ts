@@ -44,6 +44,5 @@ const RecipientSchema = new Schema<IRecipient>(
 );
 
 RecipientSchema.index({ status: 1, createdAt: -1 });
-RecipientSchema.index({ token: 1 });
 
 export const Recipient = mongoose.model<IRecipient>("Recipient", RecipientSchema);

@@ -54,5 +54,4 @@ const RecipientSchema = new mongoose_1.Schema({
     ipAddress: { type: String },
 }, { timestamps: true });
 RecipientSchema.index({ status: 1, createdAt: -1 });
-RecipientSchema.index({ token: 1 });
 exports.Recipient = mongoose_1.default.model("Recipient", RecipientSchema);
