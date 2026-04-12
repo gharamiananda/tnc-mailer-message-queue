@@ -1,18 +1,25 @@
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 import { env } from "../config/env";
 
-const resend = new Resend(env.RESEND_API_KEY);
+// Create transporter using Gmail + app password
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: env.GMAIL_USER,
+    pass: env.GMAIL_APP_PASSWORD,
+  },
+});
 
 export async function sendAckEmail(opts: {
   to:        string;
   name:      string;
   ackLink:   string;
-  pdfBuffer: Buffer;           // ← PDF attached
+  pdfBuffer: Buffer;
 }): Promise<void> {
   const { to, name, ackLink, pdfBuffer } = opts;
 
-  const { error } = await resend.emails.send({
-    from:    env.FROM_EMAIL,
+  await transporter.sendMail({
+    from:    `"Woodrock Softonic Pvt Ltd" <${env.GMAIL_USER}>`,
     to,
     subject: "Action Required: Please acknowledge and sign",
     html: `
@@ -71,7 +78,7 @@ export async function sendAckEmail(opts: {
                   <td style="padding:16px 32px;background:#fafafa;
                              border-top:1px solid #eee;text-align:center">
                     <p style="margin:0;font-size:11px;color:#bbb">
-                      Woodrock Softonic Pvt Ltd &nbsp;|&nbsp; contact@woodrockgroup.in
+                      Woodrock Softonic Pvt Ltd &nbsp;|&nbsp; netlifyconhr@gmail.com
                     </p>
                   </td>
                 </tr>
@@ -90,6 +97,4 @@ export async function sendAckEmail(opts: {
       },
     ],
   });
-
-  if (error) throw new Error(`Mail failed for ${to}: ${error.message}`);
 }

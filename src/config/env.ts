@@ -19,6 +19,8 @@ const schema = z.object({
   QSTASH_CURRENT_SIGNING_KEY:  z.string(),
   QSTASH_NEXT_SIGNING_KEY:     z.string(),
   WORKER_BASE_URL:             z.string().url(),
+  GMAIL_USER:         z.string().email(),
+  GMAIL_APP_PASSWORD: z.string(),
 });
 
 const result = schema.safeParse(process.env);
