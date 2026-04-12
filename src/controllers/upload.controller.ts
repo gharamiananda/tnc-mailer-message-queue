@@ -37,11 +37,14 @@ export async function handleUpload(
         });
 
         const token = signToken(recipient._id.toString());
-        recipient = await Recipient.findByIdAndUpdate(
-          recipient._id,
-          { token },
-          { new: true }
-        ) as typeof recipient;
+    
+
+        // After
+recipient = await Recipient.findByIdAndUpdate(
+  recipient._id,
+  { token },
+  { returnDocument: "after" }
+) as typeof recipient;
       }
 
       if (recipient) savedRecipients.push(recipient);
