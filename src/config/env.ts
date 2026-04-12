@@ -13,7 +13,7 @@ const schema = z.object({
   CLOUDINARY_API_KEY:     z.string(),
   CLOUDINARY_API_SECRET:  z.string(),
   FRONTEND_URL:           z.string().url(),
-
+  ALLOWED_ORIGINS: z.string(),
   // QStash — needed for bulk email batching
   QSTASH_TOKEN:                z.string(),
   QSTASH_CURRENT_SIGNING_KEY:  z.string(),

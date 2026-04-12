@@ -11,7 +11,21 @@ import { errorHandler } from "./middleware/errorHandler";
 const app = express();
 
 app.use(helmet());
-app.use(cors({ origin: env.FRONTEND_URL, credentials: true }));
+const ALLOWED_ORIGINS = env.ALLOWED_ORIGINS.split(",").map((o) => o.trim());
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (ALLOWED_ORIGINS.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS blocked: ${origin}`));
+      }
+    },
+    credentials: true,
+  })
+);
 app.set("trust proxy", 1);
 
 // Skip global body parser for worker route — it handles its own raw body
