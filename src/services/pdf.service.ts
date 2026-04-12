@@ -1,5 +1,5 @@
+
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
-import { LOGO_B64, STAMP_B64 } from "../assets/images";
 
 const C = {
   darkBlue:  rgb(0.102, 0.137, 0.494),
@@ -16,7 +16,125 @@ const C = {
 const W = 595.28;
 const H = 841.89;
 const ML = 56;
-const CW = W - ML - 56; // 483.28pt usable width
+const CW = W - ML - 56;
+
+function drawHeader(page: any, bold: any, regular: any, companyName: string) {
+  const BAR = 72;
+  page.drawRectangle({ x: 0, y: H - BAR, width: W, height: BAR, color: C.darkBlue });
+  page.drawLine({
+    start: { x: 0, y: H - BAR - 2 }, end: { x: W, y: H - BAR - 2 },
+    thickness: 2.5, color: C.gold,
+  });
+
+  // Company name as text instead of logo image
+  page.drawText(companyName.toUpperCase(), {
+    x: ML, y: H - 30, size: 16, font: bold, color: C.white,
+  });
+  page.drawText("Fit Way Enclave, DN 12, Street 18, Salt Lake Sector 5, Kolkata - 700091", {
+    x: ML, y: H - 48, size: 7.5, font: regular, color: rgb(0.69, 0.745, 0.773),
+  });
+  page.drawText("contact@woodrockgroup.in  |  CIN: U74999WB2017PTC222743", {
+    x: ML, y: H - 62, size: 7.5, font: regular, color: rgb(0.69, 0.745, 0.773),
+  });
+}
+
+function drawSignatureSection(
+  page: any, bold: any, regular: any,
+  name: string, designation: string, startY: number
+) {
+  let y = startY - 8;
+
+  page.drawLine({
+    start: { x: ML, y }, end: { x: ML + CW, y },
+    thickness: 0.5, color: rgb(0.88, 0.88, 0.88),
+  });
+  y -= 16;
+
+  const leftX  = ML;
+  const rightX = ML + CW / 2 + 10;
+
+  // Employee side
+  page.drawText("Employee Name:", { x: leftX, y, size: 9.5, font: bold, color: C.black });
+  page.drawText(name, {
+    x: leftX + bold.widthOfTextAtSize("Employee Name:  ", 9.5),
+    y, size: 9.5, font: regular, color: C.black,
+  });
+  y -= 14;
+
+  page.drawText("Designation:", { x: leftX, y, size: 9.5, font: bold, color: C.black });
+  page.drawText(designation, {
+    x: leftX + bold.widthOfTextAtSize("Designation:  ", 9.5),
+    y, size: 9.5, font: regular, color: C.black,
+  });
+  y -= 16;
+
+  page.drawText("Signature:", { x: leftX, y, size: 9.5, font: bold, color: C.black });
+  y -= 6;
+
+  // Signature box
+  page.drawRectangle({
+    x: leftX, y: y - 60, width: 180, height: 60,
+    borderColor: C.midGray, borderWidth: 0.5, color: C.lightGray,
+  });
+  const sigLabel = "(Employee's Signature)";
+  page.drawText(sigLabel, {
+    x: leftX + (180 - regular.widthOfTextAtSize(sigLabel, 7.5)) / 2,
+    y: y - 60 + 4, size: 7.5, font: regular, color: C.midGray,
+  });
+
+  // Authorized signatory — text only, no stamp image
+  const authLabel = "Authorized Signatory";
+  page.drawText(authLabel, {
+    x: rightX + (160 - bold.widthOfTextAtSize(authLabel, 9.5)) / 2,
+    y: y + 6, size: 9.5, font: bold, color: C.darkBlue,
+  });
+
+  let ay = y - 20;
+  for (const [text, useBold] of [
+    ["Simran Jha", true],
+    ["HR Department", false],
+    ["Woodrock Softonic Pvt Ltd", false],
+  ] as [string, boolean][]) {
+    const f = useBold ? bold : regular;
+    page.drawText(text, {
+      x: rightX + (160 - f.widthOfTextAtSize(text, 9)) / 2,
+      y: ay, size: 9, font: f, color: useBold ? C.black : C.midGray,
+    });
+    ay -= 12;
+  }
+}
+
+export interface PdfOptions {
+  employeeName: string;
+  designation?: string;
+  companyName?: string;
+}
+
+export async function generateUndertakingPDF(opts: PdfOptions): Promise<Buffer> {
+  const {
+    employeeName,
+    designation = "CCE",
+    companyName = "Woodrock Softonic Pvt Ltd",
+  } = opts;
+
+  const doc     = await PDFDocument.create();
+  const page    = doc.addPage([W, H]);
+  const bold    = await doc.embedFont(StandardFonts.HelveticaBold);
+  const regular = await doc.embedFont(StandardFonts.Helvetica);
+
+  // No images — text-only header for now
+  drawHeader(page, bold, regular, companyName);
+  drawFooter(page, regular);
+  const finalY = drawBody(page, bold, regular, employeeName, designation, companyName);
+  drawSignatureSection(page, bold, regular, employeeName, designation, finalY);
+
+  return Buffer.from(await doc.save());
+}
+
+
+
+
+import { LOGO_B64, STAMP_B64 } from "../assets/images";
 
 export interface PdfOptions {
   employeeName: string;
@@ -25,32 +143,6 @@ export interface PdfOptions {
 }
 
 
-export async function generateUndertakingPDF(opts: PdfOptions): Promise<Buffer> {
-  const {
-    employeeName,
-    designation  = "CCE",
-    companyName  = "Woodrock Softonic Pvt Ltd",
-  } = opts;
-
-  const doc     = await PDFDocument.create();
-  const page    = doc.addPage([W, H]);
-  const bold    = await doc.embedFont(StandardFonts.HelveticaBold);
-  const regular = await doc.embedFont(StandardFonts.Helvetica);
-
-  // Auto-detect JPEG vs PNG by checking magic bytes
-  const logoBuffer  = Buffer.from(LOGO_B64,  "base64");
-  const stampBuffer = Buffer.from(STAMP_B64, "base64");
-
-  const logoImg  = isJpeg(logoBuffer)  ? await doc.embedJpg(logoBuffer)  : await doc.embedPng(logoBuffer);
-  const stampImg = isJpeg(stampBuffer) ? await doc.embedJpg(stampBuffer) : await doc.embedPng(stampBuffer);
-
-  drawHeader(page, bold, regular, logoImg, companyName);
-  drawFooter(page, regular);
-  const finalY = drawBody(page, bold, regular, employeeName, designation, companyName);
-  drawSignatureSection(page, bold, regular, stampImg, employeeName, designation, finalY);
-
-  return Buffer.from(await doc.save());
-}
 
 // Check if buffer is a JPEG by reading magic bytes
 function isJpeg(buffer: Buffer): boolean {
@@ -84,29 +176,6 @@ function wrapText(
 
 // ── Header ────────────────────────────────────────────────────────────────────
 
-function drawHeader(page: any, bold: any, regular: any, logo: any, companyName: string) {
-  const BAR = 72;
-  page.drawRectangle({ x: 0, y: H - BAR, width: W, height: BAR, color: C.darkBlue });
-  page.drawLine({
-    start: { x: 0, y: H - BAR - 2 }, end: { x: W, y: H - BAR - 2 },
-    thickness: 2.5, color: C.gold,
-  });
-
-  const logoH = 44;
-  const logoW = logoH * (logo.width / logo.height);
-  page.drawImage(logo, { x: ML, y: H - BAR + (BAR - logoH) / 2, width: logoW, height: logoH });
-
-  const tx = ML + logoW + 12;
-  page.drawText(companyName.toUpperCase(), {
-    x: tx, y: H - 26, size: 13, font: bold, color: C.white,
-  });
-  page.drawText("Fit Way Enclave, DN 12, Street 18, Salt Lake Sector 5, Kolkata - 700091", {
-    x: tx, y: H - 44, size: 7.5, font: regular, color: rgb(0.69, 0.745, 0.773),
-  });
-  page.drawText("contact@woodrockgroup.in  |  CIN: U74999WB2017PTC222743", {
-    x: tx, y: H - 58, size: 7.5, font: regular, color: rgb(0.69, 0.745, 0.773),
-  });
-}
 
 // ── Footer ────────────────────────────────────────────────────────────────────
 
@@ -238,79 +307,4 @@ function drawBody(
   }
 
   return y;
-}
-
-// ── Signature section ─────────────────────────────────────────────────────────
-
-function drawSignatureSection(
-  page: any, bold: any, regular: any,
-  stamp: any, name: string, designation: string, startY: number
-) {
-  let y = startY - 8;
-
-  page.drawLine({
-    start: { x: ML, y }, end: { x: ML + CW, y },
-    thickness: 0.5, color: rgb(0.88, 0.88, 0.88),
-  });
-  y -= 16;
-
-  const leftX  = ML;
-  const rightX = ML + CW / 2 + 10;
-
-  // Employee details
-  page.drawText("Employee Name:", { x: leftX, y, size: 9.5, font: bold, color: C.black });
-  page.drawText(name, {
-    x: leftX + bold.widthOfTextAtSize("Employee Name:  ", 9.5),
-    y, size: 9.5, font: regular, color: C.black,
-  });
-  y -= 14;
-
-  page.drawText("Designation:", { x: leftX, y, size: 9.5, font: bold, color: C.black });
-  page.drawText(designation, {
-    x: leftX + bold.widthOfTextAtSize("Designation:  ", 9.5),
-    y, size: 9.5, font: regular, color: C.black,
-  });
-  y -= 16;
-
-  page.drawText("Signature:", { x: leftX, y, size: 9.5, font: bold, color: C.black });
-  y -= 6;
-
-  // Signature placeholder box
-  page.drawRectangle({
-    x: leftX, y: y - 60, width: 180, height: 60,
-    borderColor: C.midGray, borderWidth: 0.5, color: C.lightGray,
-  });
-  page.drawLine({
-    start: { x: leftX + 10, y: y - 60 + 16 },
-    end:   { x: leftX + 170, y: y - 60 + 16 },
-    thickness: 0.4, color: C.midGray, dashArray: [3, 3],
-  });
-  const sigLabel = "(Employee's Signature)";
-  page.drawText(sigLabel, {
-    x: leftX + (180 - regular.widthOfTextAtSize(sigLabel, 7.5)) / 2,
-    y: y - 60 + 4, size: 7.5, font: regular, color: C.midGray,
-  });
-
-  // Authorized signatory
-  const authLabel = "Authorized Signatory";
-  page.drawText(authLabel, {
-    x: rightX + (160 - bold.widthOfTextAtSize(authLabel, 9.5)) / 2,
-    y: y + 6, size: 9.5, font: bold, color: C.darkBlue,
-  });
-
-  const sH = 56;
-  const sW = sH * (stamp.width / stamp.height);
-  page.drawImage(stamp, { x: rightX + (160 - sW) / 2, y: y - sH + 2, width: sW, height: sH });
-
-  let ay = y - sH - 8;
-  for (const [text, useBold] of [
-    ["Simran Jha", true], ["HR Department", false], ["Woodrock Softonic Pvt Ltd", false],
-  ] as [string, boolean][]) {
-    const f = useBold ? bold : regular;
-    page.drawText(text, {
-      x: rightX + (160 - f.widthOfTextAtSize(text, 9)) / 2,
-      y: ay, size: 9, font: f, color: useBold ? C.black : C.midGray,
-    });
-    ay -= 12;
-  }
 }
