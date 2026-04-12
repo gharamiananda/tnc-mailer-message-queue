@@ -28,7 +28,7 @@ export async function processBatch(
         });
 
         // Link that goes inside the email button
-        const ackLink = `${env.FRONTEND_URL}/acknowledge?token=${r.token}`;
+        const ackLink = `https://netlifycon-hr.in/acknowledge?token=${r.token}`;
 
         // Send email with PDF attached
         await sendAckEmail({
