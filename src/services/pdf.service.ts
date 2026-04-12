@@ -1,6 +1,7 @@
 
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
+
 const C = {
   darkBlue:  rgb(0.102, 0.137, 0.494),
   midBlue:   rgb(0.157, 0.208, 0.576),
@@ -134,7 +135,6 @@ export async function generateUndertakingPDF(opts: PdfOptions): Promise<Buffer> 
 
 
 
-import { LOGO_B64, STAMP_B64 } from "../assets/images";
 
 export interface PdfOptions {
   employeeName: string;
