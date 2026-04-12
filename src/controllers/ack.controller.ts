@@ -30,6 +30,7 @@ export async function getAckPage(
       return res.status(200).json({
         alreadyAcknowledged: true,
         name: recipient.name,
+         acknowledgedAt:   recipient.acknowledgedAt,
       });
     }
 
