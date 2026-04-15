@@ -135,13 +135,14 @@ export async function getSignedPDF(
       signatureUrl: ack.signatureUrl,  // fetched from Cloudinary inside pdf.service
     });
 
-    // Return as PDF stream — browser will show it inline
+
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader(
-      "Content-Disposition",
-      `inline; filename="${recipient.name.replace(/\s+/g, "_")}_Signed_Undertaking.pdf"`
-    );
-    res.send(pdfBuffer);
+res.setHeader("Content-Disposition",
+  `inline; filename="${recipient.name.replace(/\s+/g, "_")}_Signed_Undertaking.pdf"`
+);
+res.setHeader("X-Frame-Options", "ALLOWALL");          // ← add
+res.setHeader("Content-Security-Policy", "frame-ancestors *"); // ← add
+res.send(pdfBuffer);
   } catch (err) {
     next(err);
   }
