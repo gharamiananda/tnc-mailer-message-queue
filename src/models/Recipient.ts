@@ -3,7 +3,6 @@ import mongoose, { Schema, Document } from "mongoose";
 export type RecipientStatus = "pending" | "sent" | "acknowledged" | "failed";
 
 export interface IRecipient extends Document {
-  campaignId:         mongoose.Types.ObjectId; 
   name:               string;
   email:              string;
   department:         string;
@@ -22,10 +21,6 @@ export interface IRecipient extends Document {
 
 const RecipientSchema = new Schema<IRecipient>(
   {
-     campaignId: {                               // ← add this
-      type: Schema.Types.ObjectId,
-      ref:  "Campaign",
-    },
     name:        { type: String, required: true, trim: true },
     email:       { type: String, required: true, lowercase: true, trim: true },
     department:  { type: String, default: "", trim: true },

@@ -1,8 +1,7 @@
 import mongoose, { Schema, Document } from "mongoose";
 
 export interface IAcknowledgement extends Document {
-  recipientId: mongoose.Types.ObjectId;
-  campaignId: mongoose.Types.ObjectId;
+  recipientId?: mongoose.Types.ObjectId;
   signatureUrl: string;
   signaturePublicId: string;
   ipAddress: string;
@@ -19,11 +18,6 @@ const AcknowledgementSchema = new Schema<IAcknowledgement>(
       ref: "Recipient",
       required: true,
       unique: true, // one acknowledgement per recipient, ever
-    },
-    campaignId: {
-      type: Schema.Types.ObjectId,
-      ref: "Campaign",
-      required: true,
     },
     signatureUrl: { type: String, required: true },
     signaturePublicId: { type: String, required: true },

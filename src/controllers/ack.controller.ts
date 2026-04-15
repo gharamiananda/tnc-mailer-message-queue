@@ -84,9 +84,6 @@ export async function submitSignature(
       recipientId
     );
 
-    // 2. Generate signed PDF with signature image embedded
-    const signatureBytes = new Uint8Array(req.file.buffer);
-
     const pdfBuffer = await generateUndertakingPDF({
       employeeName:        recipient.name,
       designation:         recipient.designation || "CCE",
@@ -95,11 +92,10 @@ export async function submitSignature(
       stampUrl:            env.STAMP_URL,
   signatureUrl: secureUrl,   // ← Cloudinary URL
     });
-
+console.log('object :>> ', recipient);
     // 3. Save acknowledgement record
     await Acknowledgement.create({
       recipientId:       recipient._id,
-      campaignId:        recipient.campaignId,  // ← add this
       signatureUrl:      secureUrl,
       signaturePublicId: publicId,
       ipAddress:         req.ip ?? "",
