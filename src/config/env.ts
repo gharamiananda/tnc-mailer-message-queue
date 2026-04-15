@@ -21,6 +21,8 @@ const schema = z.object({
   WORKER_BASE_URL:             z.string().url(),
   GMAIL_USER:         z.string().email(),
   GMAIL_APP_PASSWORD: z.string(),
+  LOGO_URL:  z.string().url().optional(),
+  STAMP_URL: z.string().url().optional(),
 });
 
 const result = schema.safeParse(process.env);

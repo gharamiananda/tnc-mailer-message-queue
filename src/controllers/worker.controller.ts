@@ -25,6 +25,8 @@ export async function processBatch(
         const pdfBuffer = await generateUndertakingPDF({
           employeeName: r.name,
           designation:  r.designation,
+          logoUrl:      env.LOGO_URL,    // add to .env + Vercel
+  stampUrl:     env.STAMP_URL,   // add to .env + Vercel
         });
 
         // Link that goes inside the email button
