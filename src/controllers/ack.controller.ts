@@ -99,6 +99,7 @@ export async function submitSignature(
     // 3. Save acknowledgement record
     await Acknowledgement.create({
       recipientId:       recipient._id,
+      campaignId:        recipient.campaignId,  // ← add this
       signatureUrl:      secureUrl,
       signaturePublicId: publicId,
       ipAddress:         req.ip ?? "",
