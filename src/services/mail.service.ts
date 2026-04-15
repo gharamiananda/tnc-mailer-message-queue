@@ -24,7 +24,7 @@ export async function sendAckEmail(opts: {
 }): Promise<void> {
   const { to, name, ackLink, pdfBuffer } = opts;
 
-  await transporter.sendMail({
+   const info = await transporter.sendMail({
     from:    `"Woodrock Softonic Pvt Ltd" <${env.GMAIL_USER}>`,
     to,
     subject: "Action Required: Please acknowledge and sign",
@@ -97,6 +97,10 @@ export async function sendAckEmail(opts: {
       },
     ],
   });
+
+    if (info.rejected && info.rejected.length > 0) {
+    throw new Error(`Email rejected for: ${info.rejected.join(", ")}`);
+  }
 }
 
 // ── Confirmation email after acknowledgement ──────────────────────────────────
