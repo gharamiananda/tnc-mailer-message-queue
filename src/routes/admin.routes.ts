@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { listRecipients, getRecipient } from "../controllers/admin.controller";
+import { listRecipients, getRecipient, getSignedPDF } from "../controllers/admin.controller";
 
 const router = Router();
 
@@ -8,5 +8,6 @@ router.get("/recipients", listRecipients);
 
 // GET /api/admin/recipients/:id
 router.get("/recipients/:id", getRecipient);
+router.get("/recipients/:id/pdf",  getSignedPDF);   // ← new
 
 export default router;

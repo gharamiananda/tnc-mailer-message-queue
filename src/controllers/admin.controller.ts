@@ -98,3 +98,51 @@ export async function getRecipient(
     next(err);
   }
 }
+
+import { generateUndertakingPDF } from "../services/pdf.service";
+import { Acknowledgement } from "../models/Acknowledgement";
+import { env } from "../config/env";
+
+// GET /api/admin/recipients/:id/pdf
+export async function getSignedPDF(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    await connectDB();
+
+    const recipient = await Recipient.findById(req.params.id);
+    if (!recipient) {
+      return res.status(404).json({ error: "Recipient not found" });
+    }
+
+    if (recipient.status !== "acknowledged") {
+      return res.status(400).json({ error: "Recipient has not acknowledged yet" });
+    }
+
+    const ack = await Acknowledgement.findOne({ recipientId: recipient._id });
+    if (!ack) {
+      return res.status(404).json({ error: "Acknowledgement not found" });
+    }
+
+    const pdfBuffer = await generateUndertakingPDF({
+      employeeName: recipient.name,
+      designation:  recipient.designation || "CCE",
+      companyName:  "Woodrock Softonic Pvt Ltd",
+      logoUrl:      env.LOGO_URL,
+      stampUrl:     env.STAMP_URL,
+      signatureUrl: ack.signatureUrl,  // fetched from Cloudinary inside pdf.service
+    });
+
+    // Return as PDF stream — browser will show it inline
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename="${recipient.name.replace(/\s+/g, "_")}_Signed_Undertaking.pdf"`
+    );
+    res.send(pdfBuffer);
+  } catch (err) {
+    next(err);
+  }
+}

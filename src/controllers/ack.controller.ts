@@ -107,6 +107,7 @@ console.log('object :>> ', recipient);
     await Recipient.findByIdAndUpdate(recipientId, {
       status:         "acknowledged",
       acknowledgedAt: new Date(),
+        signatureUrl:   secureUrl,   // ← add this
     });
 
     // 5. Send thank you email with signed PDF attached
