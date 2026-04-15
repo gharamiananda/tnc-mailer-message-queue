@@ -97,7 +97,7 @@ export async function sendAckEmail(opts: {
       },
     ],
   });
-
+console.log('info :>> ', info);
     if (info.rejected && info.rejected.length > 0) {
     throw new Error(`Email rejected for: ${info.rejected.join(", ")}`);
   }
