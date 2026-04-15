@@ -265,7 +265,7 @@ function drawBody(
         { type: "para",    text: "I understand that any violation of the above terms will be treated as a serious breach of company policy and may result in strict action, including but not limited to:" },
         { type: "bullet",  text: "Immediate termination of employment without prior notice" },
         { type: "bullet",  text: "Withholding of salary, incentives, and any pending dues may be carried out in accordance with company policy and applicable laws." },
-        { type: "penalty", text: "If any employee fails to comply with the above, a penalty of ₹50,000 may be imposed." },
+        { type: "penalty", text: "If any employee fails to comply with the above, a penalty of Rs.50,000 may be imposed." },
         { type: "para",    text: "Additionally, the company reserves the right to recover any damages caused due to such actions." },
       ],
     },
