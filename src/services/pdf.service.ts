@@ -244,12 +244,11 @@ function drawPage2(page: PDFPage, bold: PDFFont, regular: PDFFont) {
 }
 
 // ── PAGE 3 ────────────────────────────────────────────────────────────────────
-
 async function drawPage3(
   page: PDFPage, bold: PDFFont, regular: PDFFont,
   doc: PDFDocument,
   name: string, designation: string,
-  signatureImageBytes?: Uint8Array,
+  signatureUrl?: string,   // ← changed from signatureImageBytes
   stampUrl?: string
 ) {
   let y = H - 132;
@@ -281,28 +280,58 @@ async function drawPage3(
   });
   y -= 28;
 
-  // Employee signature image placeholder
-  const SW = 180, SH = 70;
-  page.drawRectangle({
-    x: ML, y: y - SH, width: SW, height: SH,
-    borderColor: LIGHT_GRAY, borderWidth: 0.6, color: BOX_BG,
-  });
+  // Signature label
+  page.drawText("Signature:", { x: ML, y, size: 10, font: regular, color: BLACK });
+  y -= 14;
 
-  if (signatureImageBytes) {
-    const isPng = signatureImageBytes[0] === 0x89 && signatureImageBytes[1] === 0x50;
-    const sImg  = isPng ? await doc.embedPng(signatureImageBytes) : await doc.embedJpg(signatureImageBytes);
-    page.drawImage(sImg, { x: ML + 5, y: y - SH + 5, width: SW - 10, height: SH - 10 });
+  // ── Fetch signature from Cloudinary URL and embed ─────────────────
+  const SW = 180, SH = 70;
+
+  if (signatureUrl) {
+    try {
+      const res   = await fetch(signatureUrl);
+      const buf   = await res.arrayBuffer();
+      const bytes = new Uint8Array(buf);
+      const isPng = bytes[0] === 0x89 && bytes[1] === 0x50;
+      const sImg  = isPng
+        ? await doc.embedPng(bytes)
+        : await doc.embedJpg(bytes);
+
+      page.drawImage(sImg, {
+        x: ML, y: y - SH, width: SW, height: SH,
+      });
+    } catch {
+      // Fallback to placeholder if fetch fails
+      page.drawRectangle({
+        x: ML, y: y - SH, width: SW, height: SH,
+        borderColor: LIGHT_GRAY, borderWidth: 0.6, color: BOX_BG,
+      });
+    }
+  } else {
+    // Blank placeholder
+    page.drawRectangle({
+      x: ML, y: y - SH, width: SW, height: SH,
+      borderColor: LIGHT_GRAY, borderWidth: 0.6, color: BOX_BG,
+    });
+    page.drawLine({
+      start: { x: ML + 12, y: y - SH + 18 },
+      end:   { x: ML + SW - 12, y: y - SH + 18 },
+      thickness: 0.4, color: LIGHT_GRAY, dashArray: [3, 3],
+    });
+    const ph = "(Employee's Signature)";
+    page.drawText(ph, {
+      x: ML + (SW - regular.widthOfTextAtSize(ph, 7.5)) / 2,
+      y: y - SH + 6, size: 7.5, font: regular, color: LIGHT_GRAY,
+    });
   }
 
   y -= SH + 14;
-  page.drawText("Signature:", { x: ML, y, size: 10, font: regular, color: BLACK });
-  y -= 28;
 
   // Authorized signatory
   page.drawText("Authorized Signatory", { x: ML, y, size: 10, font: regular, color: BLACK });
   y -= 16;
 
-  // Stamp image
+  // Stamp
   const STAMP_W = 130, STAMP_H = 110;
   if (stampUrl) {
     try {
@@ -316,17 +345,14 @@ async function drawPage3(
   }
   y -= STAMP_H + 14;
 
-  // Simran Jha || HR Department (bold, centered under stamp)
   page.drawText("Simran Jha || HR Department", {
     x: ML + 4, y, size: 10, font: bold, color: BLACK,
   });
   y -= 16;
 
-  // Company name — bold + underlined
   underlineText(page, bold, "Woodrock Softonic Pvt Ltd", ML, y, 10, BLACK);
   y -= 16;
 
-  // Email
   page.drawText("Email: ", { x: ML, y, size: 10, font: regular, color: BLACK });
   page.drawText("Simran.jha@woodrockgroup.in", {
     x: ML + regular.widthOfTextAtSize("Email: ", 10),
@@ -343,39 +369,36 @@ export interface PdfOptions {
   logoUrl?:             string;
   stampUrl?:            string;
   signatureImageBytes?: Uint8Array;
+    signatureUrl?:  string;  // ← Cloudinary URL instead of raw bytes
 }
-
 export async function generateUndertakingPDF(opts: PdfOptions): Promise<Buffer> {
   const {
     employeeName,
-    designation          = "CCE",
-    companyName          = "Woodrock Softonic Pvt Ltd",
+    designation = "CCE",
+    companyName = "Woodrock Softonic Pvt Ltd",
     logoUrl,
     stampUrl,
-    signatureImageBytes,
+    signatureUrl,  // ← updated
   } = opts;
 
   const doc     = await PDFDocument.create();
   const bold    = await doc.embedFont(StandardFonts.HelveticaBold);
   const regular = await doc.embedFont(StandardFonts.Helvetica);
 
-  // Page 1
   const p1 = doc.addPage([W, H]);
   await drawHeader(p1, bold, regular, doc, logoUrl);
   drawFooter(p1, bold, regular);
   drawPage1(p1, bold, regular, employeeName, designation, companyName);
 
-  // Page 2
   const p2 = doc.addPage([W, H]);
   await drawHeader(p2, bold, regular, doc, logoUrl);
   drawFooter(p2, bold, regular);
   drawPage2(p2, bold, regular);
 
-  // Page 3
   const p3 = doc.addPage([W, H]);
   await drawHeader(p3, bold, regular, doc, logoUrl);
   drawFooter(p3, bold, regular);
-  await drawPage3(p3, bold, regular, doc, employeeName, designation, signatureImageBytes, stampUrl);
+  await drawPage3(p3, bold, regular, doc, employeeName, designation, signatureUrl, stampUrl);
 
   return Buffer.from(await doc.save());
 }

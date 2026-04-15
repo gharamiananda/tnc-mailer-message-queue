@@ -93,7 +93,7 @@ export async function submitSignature(
       companyName:         "Woodrock Softonic Pvt Ltd",
       logoUrl:             env.LOGO_URL,
       stampUrl:            env.STAMP_URL,
-      signatureImageBytes: signatureBytes,  // ← embedded on page 3
+  signatureUrl: secureUrl,   // ← Cloudinary URL
     });
 
     // 3. Save acknowledgement record
