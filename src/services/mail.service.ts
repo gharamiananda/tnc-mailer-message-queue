@@ -98,3 +98,105 @@ export async function sendAckEmail(opts: {
     ],
   });
 }
+
+export async function sendAckConfirmationEmail(opts: {
+  to:        string;
+  name:      string;
+  pdfBuffer: Buffer;
+}): Promise<void> {
+  const { to, name, pdfBuffer } = opts;
+
+  await transporter.sendMail({
+    from:    `"Woodrock Softonic Pvt Ltd" <${env.GMAIL_USER}>`,
+    to,
+    subject: "Acknowledgement Confirmed — Woodrock Softonic Pvt Ltd",
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <body style="margin:0;padding:0;background:#f5f5f5;font-family:Arial,sans-serif">
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td align="center" style="padding:40px 16px">
+              <table width="560" cellpadding="0" cellspacing="0"
+                     style="background:#fff;border-radius:8px;overflow:hidden;
+                            border:1px solid #e0e0e0">
+
+                <tr>
+                  <td style="background:#1a237e;padding:28px 32px">
+                    <h2 style="margin:0;color:#fff;font-size:18px;font-weight:700">
+                      Woodrock Softonic Pvt Ltd
+                    </h2>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="padding:32px">
+
+                    <!-- Green checkmark -->
+                    <div style="text-align:center;margin-bottom:24px">
+                      <div style="width:56px;height:56px;background:#e8f5e9;border-radius:50%;
+                                  display:inline-flex;align-items:center;justify-content:center">
+                        <span style="color:#2e7d32;font-size:28px">&#10003;</span>
+                      </div>
+                    </div>
+
+                    <p style="margin:0 0 12px;font-size:15px;color:#212121;text-align:center;font-weight:700">
+                      Acknowledgement Received
+                    </p>
+
+                    <p style="margin:0 0 16px;font-size:14px;color:#555;line-height:1.7">
+                      Dear <strong>${name}</strong>,
+                    </p>
+
+                    <p style="margin:0 0 16px;font-size:14px;color:#555;line-height:1.7">
+                      Thank you for acknowledging the <strong>Employee Conduct Undertaking
+                      &amp; Confidentiality Declaration</strong>. Your signed document has
+                      been recorded successfully.
+                    </p>
+
+                    <p style="margin:0 0 24px;font-size:14px;color:#555;line-height:1.7">
+                      Please find your signed copy attached to this email for your records.
+                    </p>
+
+                    <div style="background:#f8f9fa;border-left:4px solid #1a237e;
+                                padding:12px 16px;border-radius:0 6px 6px 0;margin-bottom:24px">
+                      <p style="margin:0;font-size:13px;color:#555;">
+                        If you have any questions, please contact HR at
+                        <a href="mailto:Simran.jha@woodrockgroup.in"
+                           style="color:#1a237e">Simran.jha@woodrockgroup.in</a>
+                      </p>
+                    </div>
+
+                    <p style="margin:0;font-size:13px;color:#888;">
+                      Regards,<br/>
+                      <strong>Simran Jha</strong><br/>
+                      HR Department<br/>
+                      Woodrock Softonic Pvt Ltd
+                    </p>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="padding:16px 32px;background:#fafafa;
+                             border-top:1px solid #eee;text-align:center">
+                    <p style="margin:0;font-size:11px;color:#bbb">
+                      Woodrock Softonic Pvt Ltd &nbsp;|&nbsp; contact@woodrockgroup.in
+                    </p>
+                  </td>
+                </tr>
+
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `,
+    attachments: [
+      {
+        filename: `${name.replace(/\s+/g, "_")}_Signed_Undertaking.pdf`,
+        content:  pdfBuffer,
+      },
+    ],
+  });
+}
