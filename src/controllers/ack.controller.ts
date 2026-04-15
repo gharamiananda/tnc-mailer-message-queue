@@ -22,7 +22,7 @@ export async function getAckPage(
 
     const recipient = await Recipient.findById(
       recipientId,
-      "name email department designation status acknowledgedAt"
+      "name email department designation status acknowledgedAt signatureUrl"
     );
 
     if (!recipient) {
