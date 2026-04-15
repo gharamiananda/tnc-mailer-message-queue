@@ -1,53 +1,72 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.parseFile = parseFile;
-const exceljs_1 = __importDefault(require("exceljs"));
-const stream_1 = require("stream");
-async function parseFile(buffer, mimetype) {
-    const workbook = new exceljs_1.default.Workbook();
-    const stream = stream_1.Readable.from(buffer);
-    if (mimetype === "text/csv") {
-        await workbook.csv.read(stream);
-    }
-    else {
-        // Use read() with a stream — avoids the Buffer type mismatch from xlsx.load()
-        await workbook.xlsx.read(stream);
-    }
-    const sheet = workbook.worksheets[0];
-    if (!sheet)
+const XLSX = __importStar(require("xlsx"));
+async function parseFile(buffer, _mimetype) {
+    const workbook = XLSX.read(buffer, {
+        type: "buffer",
+        cellDates: true,
+    });
+    const sheetName = workbook.SheetNames[0];
+    if (!sheetName)
         throw new Error("File has no sheets");
-    // Map header names → column numbers (case-insensitive)
-    const colMap = {};
-    sheet.getRow(1).eachCell((cell, col) => {
-        const key = cell.value?.toString().toLowerCase().trim() ?? "";
-        colMap[key] = col;
-    });
-    if (!colMap["name"] || !colMap["email"]) {
-        throw new Error('File must have "name" and "email" columns in the first row');
-    }
+    const raw = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: "", raw: false });
+    if (raw.length === 0)
+        throw new Error("No rows found in file");
     const rows = [];
-    sheet.eachRow((row, rowNum) => {
-        if (rowNum === 1)
-            return; // skip header
-        const name = row.getCell(colMap["name"]).value?.toString().trim() ?? "";
-        const email = row.getCell(colMap["email"]).value?.toString().trim().toLowerCase() ?? "";
+    for (const row of raw) {
+        // Normalize keys to lowercase — handles any column name casing
+        const n = {};
+        for (const key of Object.keys(row)) {
+            n[key.toLowerCase().trim()] = row[key]?.toString().trim() ?? "";
+        }
+        const name = n["name"] ?? "";
+        const email = (n["email"] ?? "").toLowerCase().trim();
+        // Skip rows with missing or invalid email
         if (!name || !email || !email.includes("@"))
-            return;
-        const department = colMap["department"]
-            ? row.getCell(colMap["department"]).value?.toString().trim() ?? ""
-            : "";
-        const employeeId = colMap["employeeid"] ?? colMap["employee_id"]
-            ? row.getCell(colMap["employeeid"] ?? colMap["employee_id"]).value?.toString().trim() ?? ""
-            : "";
-        const designation = colMap["designation"]
-            ? row.getCell(colMap["designation"]).value?.toString().trim() ?? "CCE"
-            : "CCE";
-        rows.push({ name, email, department, employeeId, designation });
-    });
+            continue;
+        rows.push({
+            name,
+            email,
+            department: n["department"] || "",
+            employeeId: n["employeeid"] || n["employee_id"] || "",
+            designation: n["designation"] || "CCE",
+        });
+    }
     if (rows.length === 0)
-        throw new Error("No valid rows found in the file");
+        throw new Error("No valid rows found in file");
     return rows;
 }

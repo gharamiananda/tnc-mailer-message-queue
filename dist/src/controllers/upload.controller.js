@@ -28,7 +28,8 @@ async function handleUpload(req, res, next) {
                     status: "pending",
                 });
                 const token = (0, jwt_1.signToken)(recipient._id.toString());
-                recipient = await Recipient_1.Recipient.findByIdAndUpdate(recipient._id, { token }, { new: true });
+                // After
+                recipient = await Recipient_1.Recipient.findByIdAndUpdate(recipient._id, { token }, { returnDocument: "after" });
             }
             if (recipient)
                 savedRecipients.push(recipient);

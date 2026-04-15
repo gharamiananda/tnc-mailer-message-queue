@@ -18,11 +18,16 @@ const schema = zod_1.z.object({
     CLOUDINARY_API_KEY: zod_1.z.string(),
     CLOUDINARY_API_SECRET: zod_1.z.string(),
     FRONTEND_URL: zod_1.z.string().url(),
+    ALLOWED_ORIGINS: zod_1.z.string(),
     // QStash — needed for bulk email batching
     QSTASH_TOKEN: zod_1.z.string(),
     QSTASH_CURRENT_SIGNING_KEY: zod_1.z.string(),
     QSTASH_NEXT_SIGNING_KEY: zod_1.z.string(),
     WORKER_BASE_URL: zod_1.z.string().url(),
+    GMAIL_USER: zod_1.z.string().email(),
+    GMAIL_APP_PASSWORD: zod_1.z.string(),
+    LOGO_URL: zod_1.z.string().url().optional(),
+    STAMP_URL: zod_1.z.string().url().optional(),
 });
 const result = schema.safeParse(process.env);
 if (!result.success) {

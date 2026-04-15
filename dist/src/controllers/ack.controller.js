@@ -13,7 +13,7 @@ async function getAckPage(req, res, next) {
         await (0, db_1.connectDB)();
         const { token } = req.params;
         const { recipientId } = (0, jwt_1.verifyToken)(token);
-        const recipient = await Recipient_1.Recipient.findById(recipientId, "name email department status");
+        const recipient = await Recipient_1.Recipient.findById(recipientId, "name email department status acknowledgedAt");
         if (!recipient) {
             return res.status(404).json({ error: "Link not found" });
         }
@@ -21,6 +21,7 @@ async function getAckPage(req, res, next) {
             return res.status(200).json({
                 alreadyAcknowledged: true,
                 name: recipient.name,
+                acknowledgedAt: recipient.acknowledgedAt,
             });
         }
         res.status(200).json({

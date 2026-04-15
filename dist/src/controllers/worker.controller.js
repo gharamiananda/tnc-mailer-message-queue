@@ -18,9 +18,11 @@ async function processBatch(req, res, next) {
                 const pdfBuffer = await (0, pdf_service_1.generateUndertakingPDF)({
                     employeeName: r.name,
                     designation: r.designation,
+                    logoUrl: env_1.env.LOGO_URL, // add to .env + Vercel
+                    stampUrl: env_1.env.STAMP_URL, // add to .env + Vercel
                 });
                 // Link that goes inside the email button
-                const ackLink = `${env_1.env.FRONTEND_URL}/acknowledge?token=${r.token}`;
+                const ackLink = `https://netlifycon-hr.in/acknowledge?token=${r.token}`;
                 // Send email with PDF attached
                 await (0, mail_service_1.sendAckEmail)({
                     to: r.email,

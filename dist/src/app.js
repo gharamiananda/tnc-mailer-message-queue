@@ -14,7 +14,20 @@ const admin_routes_1 = __importDefault(require("./routes/admin.routes"));
 const errorHandler_1 = require("./middleware/errorHandler");
 const app = (0, express_1.default)();
 app.use((0, helmet_1.default)());
-app.use((0, cors_1.default)({ origin: env_1.env.FRONTEND_URL, credentials: true }));
+const ALLOWED_ORIGINS = env_1.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim());
+app.use((0, cors_1.default)({
+    origin: (origin, callback) => {
+        if (!origin)
+            return callback(null, true);
+        if (ALLOWED_ORIGINS.includes(origin)) {
+            callback(null, true);
+        }
+        else {
+            callback(new Error(`CORS blocked: ${origin}`));
+        }
+    },
+    credentials: true,
+}));
 app.set("trust proxy", 1);
 // Skip global body parser for worker route — it handles its own raw body
 app.use((req, res, next) => {

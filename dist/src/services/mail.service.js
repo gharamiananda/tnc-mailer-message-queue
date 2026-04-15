@@ -1,13 +1,23 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendAckEmail = sendAckEmail;
-const resend_1 = require("resend");
+const nodemailer_1 = __importDefault(require("nodemailer"));
 const env_1 = require("../config/env");
-const resend = new resend_1.Resend(env_1.env.RESEND_API_KEY);
+// Create transporter using Gmail + app password
+const transporter = nodemailer_1.default.createTransport({
+    service: "gmail",
+    auth: {
+        user: env_1.env.GMAIL_USER,
+        pass: env_1.env.GMAIL_APP_PASSWORD,
+    },
+});
 async function sendAckEmail(opts) {
     const { to, name, ackLink, pdfBuffer } = opts;
-    const { error } = await resend.emails.send({
-        from: env_1.env.FROM_EMAIL,
+    await transporter.sendMail({
+        from: `"Woodrock Softonic Pvt Ltd" <${env_1.env.GMAIL_USER}>`,
         to,
         subject: "Action Required: Please acknowledge and sign",
         html: `
@@ -66,7 +76,7 @@ async function sendAckEmail(opts) {
                   <td style="padding:16px 32px;background:#fafafa;
                              border-top:1px solid #eee;text-align:center">
                     <p style="margin:0;font-size:11px;color:#bbb">
-                      Woodrock Softonic Pvt Ltd &nbsp;|&nbsp; contact@woodrockgroup.in
+                      Woodrock Softonic Pvt Ltd &nbsp;|&nbsp; netlifyconhr@gmail.com
                     </p>
                   </td>
                 </tr>
@@ -85,6 +95,4 @@ async function sendAckEmail(opts) {
             },
         ],
     });
-    if (error)
-        throw new Error(`Mail failed for ${to}: ${error.message}`);
 }

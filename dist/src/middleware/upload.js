@@ -5,25 +5,32 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.signatureUpload = exports.excelUpload = void 0;
 const multer_1 = __importDefault(require("multer"));
-// For Excel files — used on /api/upload
+const path_1 = __importDefault(require("path"));
 exports.excelUpload = (0, multer_1.default)({
     storage: multer_1.default.memoryStorage(),
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
+    limits: { fileSize: 10 * 1024 * 1024 },
     fileFilter: (_req, file, cb) => {
-        const ok = [
+        const allowedMimes = [
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             "application/vnd.ms-excel",
+            "application/wps-office.xlsx",
+            "application/octet-stream", // some browsers send xlsx as this
             "text/csv",
-        ].includes(file.mimetype);
+        ];
+        const allowedExts = [".xlsx", ".xls", ".csv"];
+        const ext = path_1.default.extname(file.originalname).toLowerCase();
+        const ok = allowedMimes.includes(file.mimetype) || allowedExts.includes(ext);
         ok ? cb(null, true) : cb(new Error("Only .xlsx, .xls or .csv files allowed"));
     },
 }).single("file");
-// For signature images — used on /api/ack/:token
 exports.signatureUpload = (0, multer_1.default)({
     storage: multer_1.default.memoryStorage(),
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+    limits: { fileSize: 5 * 1024 * 1024 },
     fileFilter: (_req, file, cb) => {
-        const ok = ["image/jpeg", "image/jpg", "image/png", "image/webp"].includes(file.mimetype);
+        const allowedMimes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+        const allowedExts = [".jpg", ".jpeg", ".png", ".webp"];
+        const ext = path_1.default.extname(file.originalname).toLowerCase();
+        const ok = allowedMimes.includes(file.mimetype) || allowedExts.includes(ext);
         ok ? cb(null, true) : cb(new Error("Only JPG, PNG or WebP allowed"));
     },
 }).single("signature");
