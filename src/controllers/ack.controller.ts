@@ -111,7 +111,7 @@ console.log('object :>> ', recipient);
 
     // 5. Send thank you email with signed PDF attached
     // Fire and forget — don't block the response if email fails
-    sendAckConfirmationEmail({
+   await sendAckConfirmationEmail({
       to:        recipient.email,
       name:      recipient.name,
       pdfBuffer,
